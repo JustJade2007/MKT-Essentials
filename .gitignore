@@ -43,3 +43,11 @@ repo/
 .kiro/
 
 stare/
+
+### Logs & Test DB ###
+logs/
+.jqwik-database
+
+### AI / Local Tooling ###
+.agents/
+.gemini/

@@ -45,27 +45,43 @@ public class LegacyCodeConverter {
     );
 
     /**
-     * Pattern to match hex color codes: &#RRGGBB (6 hex digits).
-     * The ampersand followed by # and exactly 6 hex characters.
+     * Pattern to match hex color codes: &#RRGGBB or §#RRGGBB (6 hex digits).
      */
-    private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9a-fA-F]{6})");
+    private static final Pattern HEX_PATTERN = Pattern.compile("(?i)[&§]#([0-9a-f]{6})");
 
     /**
-     * Converts all legacy &X codes and &#RRGGBB hex codes in the input
+     * Pattern to match BungeeCord/Spigot legacy hex codes:
+     * &x&r&r&g&g&b&b or §x§r§r§g§g§b§b (or any combination of & and §).
+     */
+    private static final Pattern BUNGEE_HEX_PATTERN = Pattern.compile(
+            "(?i)[&§]x[&§]([0-9a-f])[&§]([0-9a-f])[&§]([0-9a-f])[&§]([0-9a-f])[&§]([0-9a-f])[&§]([0-9a-f])");
+
+    /**
+     * Pattern to match MiniMessage shorthand hex open tags: <#RRGGBB>.
+     */
+    private static final Pattern MINIMESSAGE_HEX_OPEN = Pattern.compile("(?i)<#([0-9a-f]{6})>");
+
+    /**
+     * Pattern to match MiniMessage shorthand hex close tags: </#RRGGBB>.
+     */
+    private static final Pattern MINIMESSAGE_HEX_CLOSE = Pattern.compile("(?i)</#([0-9a-f]{6})>");
+
+    /**
+     * Converts all legacy & and § codes, BungeeCord hex, and &#RRGGBB hex codes in the input
      * to their MiniMessage tag equivalents.
      *
-     * @param input raw player text with potential & codes
-     * @return text with & codes replaced by MiniMessage tags
+     * @param input raw text with potential color/decoration codes
+     * @return text with codes replaced by MiniMessage tags
      */
     public static String convert(String input) {
         if (input == null || input.isEmpty()) {
             return input == null ? "" : input;
         }
 
-        // First pass: convert hex codes &#RRGGBB → <color:#RRGGBB>
+        // First pass: convert all hex formats → <color:#RRGGBB>
         String result = convertHexCodes(input);
 
-        // Second pass: convert standard &X codes
+        // Second pass: convert standard &X and §X codes
         result = convertStandardCodes(result);
 
         return result;
@@ -78,18 +94,23 @@ public class LegacyCodeConverter {
         Map<String, Character> map = new java.util.HashMap<>();
         COLOR_MAP.forEach((code, tag) -> map.put(tag.substring(1, tag.length() - 1), code));
         DECORATION_MAP.forEach((code, tag) -> map.put(tag.substring(1, tag.length() - 1), code));
+        map.put("b", 'l');
+        map.put("i", 'o');
+        map.put("em", 'o');
+        map.put("u", 'n');
+        map.put("st", 'm');
+        map.put("obf", 'k');
         map.put("reset", 'r');
         return Map.copyOf(map);
     }
 
-    // <tag>, </tag>, <color:name> or <color:#RRGGBB>
-    private static final Pattern MINI_TAG = Pattern.compile("(?i)<(/?)([a-z_]+)(?::#?([0-9a-f]{6}|[a-z_]+))?>");
+    // <tag>, </tag>, <#RRGGBB>, </#RRGGBB>, <color:name> or <color:#RRGGBB>
+    private static final Pattern MINI_TAG = Pattern.compile("(?i)<(/?)(#?[a-z0-9_]+)(?::#?([0-9a-f]{6}|[a-z_]+))?>");
 
     /**
      * Converts MiniMessage color/decoration tags back into legacy {@code &} codes so a nickname
-     * stored as MiniMessage renders correctly through MKT's legacy ({@code &}→{@code §}) display
-     * pipeline and TAB integration. Unrecognized tags are left untouched; recognized closing tags
-     * are dropped. Idempotent for strings that already contain only legacy codes.
+     * or LuckPerms string renders correctly through MKT's legacy display pipeline and TAB integration.
+     * Unrecognized tags are left untouched; recognized closing tags are dropped.
      */
     public static String fromMiniMessage(String input) {
         if (input == null || input.isEmpty()) return input == null ? "" : input;
@@ -103,7 +124,9 @@ public class LegacyCodeConverter {
             String arg = matcher.group(3);
             String replacement;
 
-            if (closing) {
+            if (name.startsWith("#") && name.length() == 7 && name.substring(1).matches("[0-9a-f]{6}")) {
+                replacement = closing ? "" : "&#" + name.substring(1).toUpperCase();
+            } else if (closing) {
                 replacement = (name.equals("color") || REVERSE_MAP.containsKey(name)) ? "" : matcher.group();
             } else if (name.equals("color") && arg != null) {
                 if (arg.matches("(?i)[0-9a-f]{6}")) {
@@ -125,6 +148,30 @@ public class LegacyCodeConverter {
     }
 
     private static String convertHexCodes(String input) {
+        // 1. MiniMessage shorthand closing tags: </#RRGGBB> → </color>
+        input = MINIMESSAGE_HEX_CLOSE.matcher(input).replaceAll("</color>");
+
+        // 2. MiniMessage shorthand opening tags: <#RRGGBB> → <color:#RRGGBB>
+        Matcher tagMatcher = MINIMESSAGE_HEX_OPEN.matcher(input);
+        StringBuilder sbTag = new StringBuilder();
+        while (tagMatcher.find()) {
+            tagMatcher.appendReplacement(sbTag, "<color:#" + tagMatcher.group(1).toUpperCase() + ">");
+        }
+        tagMatcher.appendTail(sbTag);
+        input = sbTag.toString();
+
+        // 3. BungeeCord / Spigot hex: &x&r&r&g&g&b&b or §x§r§r§g§g§b§b
+        Matcher bungeeMatcher = BUNGEE_HEX_PATTERN.matcher(input);
+        StringBuilder sbBungee = new StringBuilder();
+        while (bungeeMatcher.find()) {
+            String hex = (bungeeMatcher.group(1) + bungeeMatcher.group(2) + bungeeMatcher.group(3)
+                    + bungeeMatcher.group(4) + bungeeMatcher.group(5) + bungeeMatcher.group(6)).toUpperCase();
+            bungeeMatcher.appendReplacement(sbBungee, "<color:#" + hex + ">");
+        }
+        bungeeMatcher.appendTail(sbBungee);
+        input = sbBungee.toString();
+
+        // 4. Standard hex: &#RRGGBB or §#RRGGBB
         Matcher matcher = HEX_PATTERN.matcher(input);
         StringBuilder sb = new StringBuilder();
         while (matcher.find()) {
@@ -140,7 +187,8 @@ public class LegacyCodeConverter {
         int i = 0;
 
         while (i < input.length()) {
-            if (input.charAt(i) == '&' && i + 1 < input.length()) {
+            char c = input.charAt(i);
+            if ((c == '&' || c == '§') && i + 1 < input.length()) {
                 char code = Character.toLowerCase(input.charAt(i + 1));
 
                 if (code == 'r') {
@@ -153,12 +201,12 @@ public class LegacyCodeConverter {
                     result.append(DECORATION_MAP.get(code));
                     i += 2;
                 } else {
-                    // Not a recognized code, keep the ampersand as-is
-                    result.append(input.charAt(i));
+                    // Not a recognized code, keep the marker as-is
+                    result.append(c);
                     i++;
                 }
             } else {
-                result.append(input.charAt(i));
+                result.append(c);
                 i++;
             }
         }

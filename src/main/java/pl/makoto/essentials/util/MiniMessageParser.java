@@ -222,6 +222,8 @@ public class MiniMessageParser {
         if (DECORATION_CANONICAL.containsKey(tagName)) return true;
         // Named colors (direct tag name)
         if (NAMED_COLORS.containsKey(tagName)) return true;
+        // Shorthand hex color tag: <#RRGGBB>
+        if (tagName.startsWith("#") && isValidHex(tagName.substring(1))) return true;
         // color:arg syntax
         if (tagName.equals("color") && !tagArgs.isEmpty()) {
             return isValidColorArg(tagArgs.toLowerCase());
@@ -242,7 +244,8 @@ public class MiniMessageParser {
     private static boolean isRecognizedTag(String name) {
         if (DECORATION_CANONICAL.containsKey(name)) return true;
         if (NAMED_COLORS.containsKey(name)) return true;
-        if (name.equals("color")) return true;
+        if (name.startsWith("#") && isValidHex(name.substring(1))) return true;
+        if (name.equals("color") || name.startsWith("color:")) return true;
         if (name.equals("reset")) return true;
         if (name.equals("newline") || name.equals("br")) return true;
         if (ADVANCED_TAGS.contains(name)) return true;
@@ -255,16 +258,21 @@ public class MiniMessageParser {
     private static boolean isValidColorArg(String arg) {
         // Hex: #RRGGBB
         if (arg.startsWith("#") && arg.length() == 7) {
-            for (int i = 1; i < 7; i++) {
-                char c = arg.charAt(i);
-                if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
-                    return false;
-                }
-            }
-            return true;
+            return isValidHex(arg.substring(1));
         }
         // Named color
         return NAMED_COLORS.containsKey(arg);
+    }
+
+    private static boolean isValidHex(String hex) {
+        if (hex == null || hex.length() != 6) return false;
+        for (int i = 0; i < 6; i++) {
+            char c = hex.charAt(i);
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // ========================
@@ -354,6 +362,9 @@ public class MiniMessageParser {
      * Used for matching closing tags to opening tags.
      */
     private static String getCanonicalName(String name) {
+        // Shorthand hex color
+        if (name.startsWith("#") && isValidHex(name.substring(1))) return "color";
+        if (name.startsWith("color:")) return "color";
         // Decoration aliases
         String decoration = DECORATION_CANONICAL.get(name);
         if (decoration != null) return decoration;
@@ -514,6 +525,16 @@ public class MiniMessageParser {
         if (namedColor != null) {
             TextColor color = TextColor.fromLegacyFormat(namedColor);
             return parentStyle.withColor(color);
+        }
+
+        // Shorthand hex color: <#RRGGBB>
+        if (name.startsWith("#") && isValidHex(name.substring(1))) {
+            try {
+                int rgb = Integer.parseInt(name.substring(1), 16);
+                return parentStyle.withColor(TextColor.fromRgb(rgb));
+            } catch (NumberFormatException e) {
+                return parentStyle;
+            }
         }
 
         // color:arg syntax

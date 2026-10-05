@@ -58,4 +58,25 @@ public class LuckPermsHook {
             return null;
         }
     }
+
+    public static String getUsername(ServerPlayer player) {
+        if (!available || player == null) return "";
+        try {
+            User user = api.getUserManager().getUser(player.getUUID());
+            if (user == null) return "";
+            CachedMetaData metaData = user.getCachedData().getMetaData();
+            String username = metaData.getMetaValue("username");
+            if (username != null && !username.isBlank()) return username;
+            String displayName = metaData.getMetaValue("displayname");
+            if (displayName != null && !displayName.isBlank()) return displayName;
+            String displayName2 = metaData.getMetaValue("display-name");
+            if (displayName2 != null && !displayName2.isBlank()) return displayName2;
+            String nick = metaData.getMetaValue("nickname");
+            if (nick != null && !nick.isBlank()) return nick;
+            return "";
+        } catch (NoClassDefFoundError e) {
+            available = false;
+            return "";
+        }
+    }
 }

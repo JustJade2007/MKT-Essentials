@@ -6,6 +6,10 @@
 
 - **Afk in config** - Added `afk` commant to the config file, allowing server administrators to configure AFK is enabled or disabled on server. This provides flexibility for server owners to manage player activity and ensure a smooth gaming experience. 
 
+### Chat & Formatting
+
+- **LuckPerms Hex Color Code Support** — full support for hex color codes in LuckPerms usernames, prefixes, and suffixes across chat formatting, tab list display, above-head scoreboard nametags, and MKT placeholders. Supports `&#RRGGBB`, `§#RRGGBB`, BungeeCord/Spigot `&x&r&r&g&g&b&b` / `§x§r§r§g§g§b§b`, and MiniMessage `<#RRGGBB>` shorthand tags, ensuring gradient and custom-colored ranks and names render correctly in-game. 
+
 ## [1.1.0]
 
 ### Automation
