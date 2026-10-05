@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.1]
+## [1.2.1]
 
 ### Fixes & Improvements
 
@@ -9,6 +9,13 @@
 - **Missing Keys Merging for commands.yml** — Missing keys from default `commands.yml` are now merged automatically on startup without overwriting custom settings. 
 - **Iris Compatibility (module collision)** — Fixed a startup crash when installed alongside Iris (or any other mod shipping Apache Commons Collections 4): "both package `org.apache.commons.collections4`". The bundled copy used by the Discord bot (JDA) is now relocated to a private package (`pl.makoto.essentials.libs.collections4`) and embedded in the mod jar, so it can no longer clash with other mods.
 - **Placeholder API version requirement relaxed** — The optional Text Placeholder API dependency now accepts any `2.4.x` or newer (previously `2.4.2+`), so servers running `2.4.1` no longer fail to load. If an installed version has an incompatible API, the integration is skipped gracefully instead of crashing; MKT placeholders keep working internally.
+- **AFK Command Disabling & Mod Compatibility** — Fixed an issue where setting AFK to false in the config still registered `/afk` and intercepted commands from other mods. Config directories now properly resolve through `FMLPaths.CONFIGDIR`, command toggles accept root-level and dotted keys (e.g. `afk: false`, `utility.afk: false`), direct boolean values in `settings.yml` are recognized, and `/afk` is dynamically unregistered on reload when disabled so other mods can freely provide `/afk`.
+
+## [1.1.1]
+
+## Config
+
+- **Afk in config** - Added `afk` commant to the config file, allowing server administrators to configure AFK is enabled or disabled on server. This provides flexibility for server owners to manage player activity and ensure a smooth gaming experience. 
 
 ### Chat & Formatting
 

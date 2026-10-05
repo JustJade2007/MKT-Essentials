@@ -485,7 +485,12 @@ public final class Settings {
     public static List<String> getItemWhitelist() { return itemWhitelist; }
 
     public static boolean isCommandEnabled(String commandName) {
-        return commandToggles.getOrDefault(commandName, true);
+        if (commandName == null) return true;
+        String name = commandName.toLowerCase(java.util.Locale.ROOT);
+        if ("afk".equals(name) && !isAfkEnabled()) {
+            return false;
+        }
+        return commandToggles.getOrDefault(name, true);
     }
 
     // Auth & Discord getters
@@ -553,8 +558,29 @@ public final class Settings {
         if (blacklist instanceof List<?> list) {
             rtpBiomeBlacklist = list.stream().map(Object::toString).toList();
         }
-        afkEnabled = ConfigManager.getNestedValue(map, "afk.enabled", true);
-        afkTimeout = ConfigManager.getNestedValue(map, "afk.timeout", 300);
+        Object afkObj = map.get("afk");
+        if (afkObj instanceof Boolean b) {
+            afkEnabled = b;
+            afkTimeout = 300;
+        } else if (afkObj instanceof Number n) {
+            afkEnabled = n.intValue() != 0;
+            afkTimeout = 300;
+        } else if (afkObj instanceof String s) {
+            afkEnabled = parseBoolean(s, true);
+            afkTimeout = 300;
+        } else if (afkObj instanceof Map<?, ?> afkMap) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> typedAfkMap = (Map<String, Object>) afkMap;
+            afkEnabled = ConfigManager.getNestedValue(typedAfkMap, "enabled", true);
+            Boolean afkCmd = ConfigManager.getNestedValue(typedAfkMap, "command", (Boolean) null);
+            if (afkCmd != null && !afkCmd) {
+                afkEnabled = false;
+            }
+            afkTimeout = ConfigManager.getNestedValue(typedAfkMap, "timeout", 300);
+        } else {
+            afkEnabled = ConfigManager.getNestedValue(map, "afk.enabled", true);
+            afkTimeout = ConfigManager.getNestedValue(map, "afk.timeout", 300);
+        }
         autoSaveInterval = ConfigManager.getNestedValue(map, "data.auto-save-interval", 300);
         vanishFakeMessages = ConfigManager.getNestedValue(map, "vanish.fake-messages", true);
         backupOnDeath = ConfigManager.getNestedValue(map, "backup.on-death", true);
@@ -771,16 +797,43 @@ public final class Settings {
     @SuppressWarnings("unchecked")
     static void loadCommands(Map<String, Object> map) {
         Map<String, Boolean> toggles = new HashMap<>();
-        for (Map.Entry<String, Object> category : map.entrySet()) {
-            if (category.getValue() instanceof Map<?, ?> commands) {
-                for (Map.Entry<?, ?> cmd : commands.entrySet()) {
-                    String name = cmd.getKey().toString();
-                    boolean enabled = cmd.getValue() instanceof Boolean b ? b : true;
-                    toggles.put(name, enabled);
+        parseCommandToggles(map, toggles);
+        commandToggles = toggles;
+    }
+
+    private static void parseCommandToggles(Map<String, Object> map, Map<String, Boolean> toggles) {
+        if (map == null) return;
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String key = entry.getKey().toLowerCase(java.util.Locale.ROOT);
+            Object value = entry.getValue();
+            if (value instanceof Map<?, ?> subMap) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> typedSubMap = (Map<String, Object>) subMap;
+                parseCommandToggles(typedSubMap, toggles);
+            } else {
+                boolean enabled = parseBoolean(value, true);
+                toggles.merge(key, enabled, (oldVal, newVal) -> oldVal && newVal);
+                if (key.contains(".")) {
+                    String simpleName = key.substring(key.lastIndexOf('.') + 1);
+                    toggles.merge(simpleName, enabled, (oldVal, newVal) -> oldVal && newVal);
                 }
             }
         }
-        commandToggles = toggles;
+    }
+
+    static boolean parseBoolean(Object value, boolean defaultValue) {
+        if (value instanceof Boolean b) return b;
+        if (value instanceof Number n) return n.intValue() != 0;
+        if (value instanceof String s) {
+            String trimmed = s.trim().toLowerCase(java.util.Locale.ROOT);
+            if (trimmed.equals("true") || trimmed.equals("yes") || trimmed.equals("on") || trimmed.equals("1") || trimmed.equals("enable") || trimmed.equals("enabled")) {
+                return true;
+            }
+            if (trimmed.equals("false") || trimmed.equals("no") || trimmed.equals("off") || trimmed.equals("0") || trimmed.equals("disable") || trimmed.equals("disabled")) {
+                return false;
+            }
+        }
+        return defaultValue;
     }
 
     @SuppressWarnings("unchecked")

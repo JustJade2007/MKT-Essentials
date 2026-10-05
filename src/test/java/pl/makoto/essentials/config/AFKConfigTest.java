@@ -73,6 +73,68 @@ public class AFKConfigTest {
     }
 
     @Test
+    void testAfkDirectBooleanInSettings() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("afk", false);
+        Settings.loadSettings(map);
+        assertFalse(Settings.isAfkEnabled());
+        assertFalse(Settings.isCommandEnabled("afk"));
+
+        map.put("afk", "false");
+        Settings.loadSettings(map);
+        assertFalse(Settings.isAfkEnabled());
+        assertFalse(Settings.isCommandEnabled("afk"));
+
+        map.put("afk", "off");
+        Settings.loadSettings(map);
+        assertFalse(Settings.isAfkEnabled());
+
+        map.put("afk", true);
+        Settings.loadSettings(map);
+        assertTrue(Settings.isAfkEnabled());
+    }
+
+    @Test
+    void testAfkTopLevelToggleInCommandsYml() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("afk", false);
+        Settings.loadCommands(map);
+        assertFalse(Settings.isCommandEnabled("afk"));
+        assertFalse(Settings.isCommandEnabled("AFK"));
+
+        map.put("afk", "off");
+        Settings.loadCommands(map);
+        assertFalse(Settings.isCommandEnabled("afk"));
+
+        map.put("afk", 0);
+        Settings.loadCommands(map);
+        assertFalse(Settings.isCommandEnabled("afk"));
+    }
+
+    @Test
+    void testAfkDottedKeyInCommandsYml() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("utility.afk", false);
+        Settings.loadCommands(map);
+        assertFalse(Settings.isCommandEnabled("afk"));
+    }
+
+    @Test
+    void testAfkDisabledInSettingsOverridesCommandsEnabled() {
+        Map<String, Object> settingsMap = new HashMap<>();
+        settingsMap.put("afk", false);
+        Settings.loadSettings(settingsMap);
+
+        Map<String, Object> commandsMap = new HashMap<>();
+        Map<String, Object> utilitySection = new HashMap<>();
+        utilitySection.put("afk", true);
+        commandsMap.put("utility", utilitySection);
+        Settings.loadCommands(commandsMap);
+
+        assertFalse(Settings.isCommandEnabled("afk"));
+    }
+
+    @Test
     void testDeepMergeAddsMissingAfkKeys() {
         Yaml yaml = new Yaml();
         Map<String, Object> defaultCommands = yaml.load(DefaultTemplates.COMMANDS_YML);

@@ -30,7 +30,7 @@ public final class AccountDatabase {
 
     public static void init() {
         try {
-            Path dbDir = Path.of("config", "mktessentials");
+            Path dbDir = pl.makoto.essentials.config.ConfigManager.getConfigDir();
             Files.createDirectories(dbDir);
             String url = "jdbc:sqlite:" + dbDir.resolve("accounts.db").toAbsolutePath();
             connection = DriverManager.getConnection(url);

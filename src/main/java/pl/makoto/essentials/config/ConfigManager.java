@@ -18,7 +18,11 @@ public final class ConfigManager {
     public static boolean isInitialized() { return initialized; }
 
     public static void init() {
-        configDir = Path.of("config", "mktessentials");
+        try {
+            configDir = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mktessentials");
+        } catch (Throwable t) {
+            configDir = Path.of("config", "mktessentials");
+        }
         langDir = configDir.resolve("lang");
         iconDir = configDir.resolve("icon");
         ensureDirectories();
@@ -46,6 +50,10 @@ public final class ConfigManager {
     public static boolean reload() {
         try {
             loadAll();
+            if (MKTEssentials.getServer() != null && (!Settings.isAfkEnabled() || !Settings.isCommandEnabled("afk"))) {
+                pl.makoto.essentials.util.CommandUtils.removeRootCommand(
+                        MKTEssentials.getServer().getCommands().getDispatcher(), "afk");
+            }
             return true;
         } catch (Exception e) {
             MKTEssentials.LOGGER.error("Failed to reload configuration", e);
@@ -86,9 +94,18 @@ public final class ConfigManager {
         }
     }
 
+    /** Folder where mktessentials configs live. */
+    public static Path getConfigDir() {
+        if (configDir == null) init();
+        return configDir;
+    }
+
     /** Folder where server-list icons live: {@code config/mktessentials/icon/}. */
     public static Path getIconDir() {
-        if (iconDir == null) iconDir = Path.of("config", "mktessentials", "icon");
+        if (iconDir == null) {
+            Path base = getConfigDir();
+            iconDir = base.resolve("icon");
+        }
         return iconDir;
     }
 
