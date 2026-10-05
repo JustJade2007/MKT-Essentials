@@ -36,6 +36,7 @@ public final class ConfigManager {
         // zachowując wartości i własne sekcje użytkownika
         mergeMissingKeys(configDir.resolve("settings.yml"), DefaultTemplates.SETTINGS_YML);
         mergeMissingKeys(configDir.resolve("chat.yml"), DefaultTemplates.CHAT_YML);
+        mergeMissingKeys(configDir.resolve("commands.yml"), DefaultTemplates.COMMANDS_YML);
         writeDefaultIfMissing(langDir.resolve("en_us.yml"), DefaultTemplates.LANG_EN_US);
         writeDefaultIfMissing(langDir.resolve("pl_pl.yml"), DefaultTemplates.LANG_PL_PL);
         loadAll();
@@ -69,6 +70,10 @@ public final class ConfigManager {
         pl.makoto.essentials.util.SchedulerManager.load(scheduler != null ? scheduler : Map.of());
 
         I18n.init(Settings.getLanguage());
+
+        if (!Settings.isAfkEnabled() || !Settings.isCommandEnabled("afk")) {
+            pl.makoto.essentials.util.AFKManager.clearAll();
+        }
     }
 
     private static void ensureDirectories() {
@@ -182,7 +187,7 @@ public final class ConfigManager {
 
     /** Dodaje brakujące klucze z defaults do user (rekurencyjnie po mapach). Zwraca true gdy coś dodano. */
     @SuppressWarnings("unchecked")
-    private static boolean deepMergeMissing(Map<String, Object> user, Map<String, Object> defaults) {
+    static boolean deepMergeMissing(Map<String, Object> user, Map<String, Object> defaults) {
         boolean changed = false;
         for (Map.Entry<String, Object> e : defaults.entrySet()) {
             String key = e.getKey();

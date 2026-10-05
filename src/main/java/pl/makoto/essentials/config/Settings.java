@@ -29,6 +29,7 @@ public final class Settings {
     private static List<String> rtpBiomeBlacklist = List.of("minecraft:ocean", "minecraft:deep_ocean", "minecraft:river");
 
     // AFK
+    private static boolean afkEnabled = true;
     private static int afkTimeout = 300;
 
     // Nickname (/nick validation — inspired by FlectonePulse allowedInput)
@@ -335,6 +336,7 @@ public final class Settings {
     public static double getRtpCenterX() { return rtpCenterX; }
     public static double getRtpCenterZ() { return rtpCenterZ; }
     public static List<String> getRtpBiomeBlacklist() { return rtpBiomeBlacklist; }
+    public static boolean isAfkEnabled() { return afkEnabled; }
     public static int getAfkTimeout() { return afkTimeout; }
     public static boolean isRoleplayEnabled() { return roleplayEnabled; }
     public static String getMeFormat() { return meFormat; }
@@ -551,6 +553,7 @@ public final class Settings {
         if (blacklist instanceof List<?> list) {
             rtpBiomeBlacklist = list.stream().map(Object::toString).toList();
         }
+        afkEnabled = ConfigManager.getNestedValue(map, "afk.enabled", true);
         afkTimeout = ConfigManager.getNestedValue(map, "afk.timeout", 300);
         autoSaveInterval = ConfigManager.getNestedValue(map, "data.auto-save-interval", 300);
         vanishFakeMessages = ConfigManager.getNestedValue(map, "vanish.fake-messages", true);
