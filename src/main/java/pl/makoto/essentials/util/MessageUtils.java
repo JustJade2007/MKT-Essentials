@@ -36,7 +36,8 @@ public class MessageUtils {
         try {
             Component parsed = Placeholders.parseText(text, ServerPlaceholderContext.of(player));
             return parsed.getString();
-        } catch (NoClassDefFoundError e) {
+        } catch (LinkageError e) {
+            // Placeholder API absent, or an older build with a different API surface.
             return text;
         }
     }
