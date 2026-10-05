@@ -7,6 +7,7 @@
 - **AFK Team Assignment Fix (#6)** — Going AFK no longer assigns players to a scoreboard team or disrupts existing vanilla team assignments. Above-head nametag management also respects and preserves players on existing vanilla/external teams.
 - **AFK Configuration & Disabling (#1)** — Added an explicit `afk.enabled` configuration option in `settings.yml` and unified command toggle with `commands.yml -> utility.afk`. Setting `afk.enabled: false` or `utility.afk: false` properly disables the `/afk` command and auto-AFK detection, clears any active AFK status on reload, and returns a helpful disabled message when the command is run.
 - **Missing Keys Merging for commands.yml** — Missing keys from default `commands.yml` are now merged automatically on startup without overwriting custom settings. 
+- **Iris Compatibility (module collision)** — Fixed a startup crash when installed alongside Iris (or any other mod shipping Apache Commons Collections 4): "both package `org.apache.commons.collections4`". The bundled copy used by the Discord bot (JDA) is now relocated to a private package (`pl.makoto.essentials.libs.collections4`) and embedded in the mod jar, so it can no longer clash with other mods.
 
 ### Chat & Formatting
 

@@ -3,6 +3,7 @@ plugins {
     id 'maven-publish'
     id 'net.neoforged.moddev' version '2.0.141'
     id 'idea'
+    id 'com.gradleup.shadow' version '9.2.2' apply false
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -126,6 +127,12 @@ neoForge {
 // "optional", meaning it will not be pulled by dependents of this mod.
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    // JDA + commons-collections4, relocated and embedded directly in the mod jar (see relocatedJda task).
+    relocatedJdaLibs {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
 }
 
 dependencies {
@@ -147,11 +154,10 @@ dependencies {
         exclude module: 'opus-java'
         exclude group: 'org.slf4j'
     }
-    jarJar(group: 'net.dv8tion', name: 'JDA', version: '[5.2.0,6.0)') {
-        version { prefer '5.2.1' }
-        exclude module: 'opus-java'
-        exclude group: 'org.slf4j'
-    }
+    // JDA is NOT jarJar'd: it is embedded via the relocatedJda task below so that its references to
+    // commons-collections4 can be rewritten to our private relocated copy.
+    relocatedJdaLibs 'net.dv8tion:JDA:5.2.1'
+    relocatedJdaLibs 'org.apache.commons:commons-collections4:4.4'
 
     // Tranzytywne zależności JDA — jarJar NIE ciągnie ich automatycznie, trzeba je
     // jawnie spakować, inaczej w runtime leci NoClassDefFoundError (okhttp3/Dispatcher itp.).
@@ -171,8 +177,9 @@ dependencies {
     jarJar(group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '[2.17.2,3.0)') { version { prefer '2.17.2' } }
     // Apache Commons Collections 4 — używane przez JDA OptionMapping przy parsowaniu
     // opcji slash commandów. Bez tego: NoClassDefFoundError org/apache/commons/collections4/Bag.
+    // Relocated to pl.makoto.essentials.libs.collections4 (see relocatedJda) because other mods
+    // (e.g. Iris) also ship org.apache.commons.collections4, which causes a module package collision.
     implementation 'org.apache.commons:commons-collections4:4.4'
-    jarJar(group: 'org.apache.commons', name: 'commons-collections4', version: '[4.4,5.0)') { version { prefer '4.4' } }
 
     // SQLite JDBC driver
     implementation('org.xerial:sqlite-jdbc:3.45.1.0') {
@@ -205,6 +212,26 @@ configurations {
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
+}
+
+// Builds a single jar containing JDA + commons-collections4 with collections4 relocated to a private
+// package. JDA's bytecode is rewritten to point at the relocated classes. The result is merged into the
+// mod jar, so no other mod's org.apache.commons.collections4 can collide with ours.
+var relocatedJda = tasks.register('relocatedJda', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveClassifier = 'relocated-jda'
+    destinationDirectory = layout.buildDirectory.dir('relocated')
+    configurations = [project.configurations.relocatedJdaLibs]
+    relocate 'org.apache.commons.collections4', 'pl.makoto.essentials.libs.collections4'
+    mergeServiceFiles()
+    exclude 'META-INF/MANIFEST.MF', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/versions/**', 'module-info.class'
+}
+
+tasks.named('jar', Jar).configure {
+    dependsOn relocatedJda
+    from({ zipTree(relocatedJda.get().archiveFile) }) {
+        exclude 'META-INF/MANIFEST.MF'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
