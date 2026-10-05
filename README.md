@@ -8,7 +8,7 @@ rich chat & cosmetics, moderation, an authentication system with an embedded Dis
 **server-side** (vanilla clients need nothing).
 
 - **Minecraft:** 1.21.1 · **Loader:** NeoForge 21.1.228+ · **Java:** 21
-- **Mod ID:** `mktessentials` · **Version:** 1.0.0
+- **Mod ID:** `mktessentials` · **Version:** 1.1.1
 
 ---
 
@@ -28,7 +28,7 @@ rich chat & cosmetics, moderation, an authentication system with an embedded Dis
 ## 📥 Quick install
 
 1. Install **NeoForge 1.21.1** (21.1.228+) on your server.
-2. Drop `mktessentials-1.0.0.jar` into `mods/`.
+2. Drop `mktessentials-1.1.1.jar` into `mods/`.
 3. Start once to generate configs, edit them, start again.
 
 All libraries (JDA, SQLite, jBCrypt, …) are bundled. **Discord features** also need the

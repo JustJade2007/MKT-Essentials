@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.1]
+
+### Fixes & Improvements
+
+- **AFK Team Assignment Fix (#6)** — Going AFK no longer assigns players to a scoreboard team or disrupts existing vanilla team assignments. Above-head nametag management also respects and preserves players on existing vanilla/external teams.
+- **AFK Configuration & Disabling (#1)** — Added an explicit `afk.enabled` configuration option in `settings.yml` and unified command toggle with `commands.yml -> utility.afk`. Setting `afk.enabled: false` or `utility.afk: false` properly disables the `/afk` command and auto-AFK detection, clears any active AFK status on reload, and returns a helpful disabled message when the command is run.
+- **Missing Keys Merging for commands.yml** — Missing keys from default `commands.yml` are now merged automatically on startup without overwriting custom settings. 
+- **Iris Compatibility (module collision)** — Fixed a startup crash when installed alongside Iris (or any other mod shipping Apache Commons Collections 4): "both package `org.apache.commons.collections4`". The bundled copy used by the Discord bot (JDA) is now relocated to a private package (`pl.makoto.essentials.libs.collections4`) and embedded in the mod jar, so it can no longer clash with other mods.
+- **Placeholder API version requirement relaxed** — The optional Text Placeholder API dependency now accepts any `2.4.x` or newer (previously `2.4.2+`), so servers running `2.4.1` no longer fail to load. If an installed version has an incompatible API, the integration is skipped gracefully instead of crashing; MKT placeholders keep working internally.
+- **AFK Command Disabling & Mod Compatibility** — Fixed an issue where setting AFK to false in the config still registered `/afk` and intercepted commands from other mods. Config directories now properly resolve through `FMLPaths.CONFIGDIR`, command toggles accept root-level and dotted keys (e.g. `afk: false`, `utility.afk: false`), direct boolean values in `settings.yml` are recognized, and `/afk` is dynamically unregistered on reload when disabled so other mods can freely provide `/afk`.
+
 ## [1.1.1]
 
 ## Config

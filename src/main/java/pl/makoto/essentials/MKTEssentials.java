@@ -123,8 +123,8 @@ public class MKTEssentials {
         // Text Placeholder API so other mods can use %mktessentials:*% too.
         try {
             MKTPlaceholders.register();
-        } catch (NoClassDefFoundError e) {
-            LOGGER.info("Text Placeholder API not found — MKT placeholders still work internally, just not exposed to other mods.");
+        } catch (LinkageError e) {
+            LOGGER.info("Text Placeholder API not found or incompatible — MKT placeholders still work internally, just not exposed to other mods.");
         }
 
         // Clean up orphaned hologram ArmorStands from previous sessions

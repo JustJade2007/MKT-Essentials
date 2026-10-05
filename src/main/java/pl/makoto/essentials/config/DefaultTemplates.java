@@ -75,9 +75,11 @@ final class DefaultTemplates {
                 - "minecraft:river"
 
             # ============================================
-            #  AFK Detection
+            #  AFK Settings
             # ============================================
             afk:
+              # Enable or disable the AFK system and command
+              enabled: true
               # Seconds of inactivity before marking player as AFK (0 = disabled)
               timeout: 300
 
@@ -895,6 +897,7 @@ final class DefaultTemplates {
               enchant-invalid: "&cInvalid enchantment."
 
             afk:
+              disabled: "&cThe AFK system is disabled on this server."
               now-afk: "&7{player} is now AFK."
               no-longer-afk: "&7{player} is no longer AFK."
 
@@ -1057,6 +1060,7 @@ final class DefaultTemplates {
               enchant-invalid: "&cNieprawidlowy czar."
 
             afk:
+              disabled: "&cSystem AFK jest wylaczony na tym serwerze."
               now-afk: "&7{player} jest teraz AFK."
               no-longer-afk: "&7{player} nie jest juz AFK."
 

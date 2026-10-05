@@ -31,6 +31,20 @@ public final class NametagManager {
 
         try {
             ServerScoreboard scoreboard = server.getScoreboard();
+            String memberName = NicknameService.teamMemberName(player);
+
+            PlayerTeam existingTeam = scoreboard.getPlayersTeam(memberName);
+            String oldTeamName = TEAM_NAMES.get(player.getUUID());
+            if (existingTeam != null && (oldTeamName == null || !existingTeam.getName().equals(oldTeamName))) {
+                // Player is on a vanilla or external team. Do not disrupt it!
+                if (oldTeamName != null) {
+                    TEAM_NAMES.remove(player.getUUID());
+                    PlayerTeam oldTeam = scoreboard.getPlayerTeam(oldTeamName);
+                    if (oldTeam != null) scoreboard.removePlayerTeam(oldTeam);
+                }
+                return;
+            }
+
             String teamName = TEAM_NAMES.computeIfAbsent(player.getUUID(), u -> "mkt" + (counter++ & 0xFFFFF));
 
             PlayerTeam team = scoreboard.getPlayerTeam(teamName);
@@ -39,7 +53,7 @@ public final class NametagManager {
             team.setPlayerPrefix(MessageUtils.format(PlayerListener.getPrefixForTab(player)));
             team.setPlayerSuffix(MessageUtils.format(PlayerListener.getSuffixForTab(player)));
             // Use the name the client renders (nickname when nicked) so the prefix applies above the head
-            scoreboard.addPlayerToTeam(NicknameService.teamMemberName(player), team);
+            scoreboard.addPlayerToTeam(memberName, team);
         } catch (Exception e) {
             MKTEssentials.LOGGER.warn("Failed to update nametag for {}: {}", player.getScoreboardName(), e.getMessage());
         }

@@ -18,7 +18,11 @@ public final class ConfigManager {
     public static boolean isInitialized() { return initialized; }
 
     public static void init() {
-        configDir = Path.of("config", "mktessentials");
+        try {
+            configDir = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mktessentials");
+        } catch (Throwable t) {
+            configDir = Path.of("config", "mktessentials");
+        }
         langDir = configDir.resolve("lang");
         iconDir = configDir.resolve("icon");
         ensureDirectories();
@@ -36,6 +40,7 @@ public final class ConfigManager {
         // zachowując wartości i własne sekcje użytkownika
         mergeMissingKeys(configDir.resolve("settings.yml"), DefaultTemplates.SETTINGS_YML);
         mergeMissingKeys(configDir.resolve("chat.yml"), DefaultTemplates.CHAT_YML);
+        mergeMissingKeys(configDir.resolve("commands.yml"), DefaultTemplates.COMMANDS_YML);
         writeDefaultIfMissing(langDir.resolve("en_us.yml"), DefaultTemplates.LANG_EN_US);
         writeDefaultIfMissing(langDir.resolve("pl_pl.yml"), DefaultTemplates.LANG_PL_PL);
         loadAll();
@@ -45,6 +50,10 @@ public final class ConfigManager {
     public static boolean reload() {
         try {
             loadAll();
+            if (MKTEssentials.getServer() != null && (!Settings.isAfkEnabled() || !Settings.isCommandEnabled("afk"))) {
+                pl.makoto.essentials.util.CommandUtils.removeRootCommand(
+                        MKTEssentials.getServer().getCommands().getDispatcher(), "afk");
+            }
             return true;
         } catch (Exception e) {
             MKTEssentials.LOGGER.error("Failed to reload configuration", e);
@@ -69,6 +78,10 @@ public final class ConfigManager {
         pl.makoto.essentials.util.SchedulerManager.load(scheduler != null ? scheduler : Map.of());
 
         I18n.init(Settings.getLanguage());
+
+        if (!Settings.isAfkEnabled() || !Settings.isCommandEnabled("afk")) {
+            pl.makoto.essentials.util.AFKManager.clearAll();
+        }
     }
 
     private static void ensureDirectories() {
@@ -81,9 +94,18 @@ public final class ConfigManager {
         }
     }
 
+    /** Folder where mktessentials configs live. */
+    public static Path getConfigDir() {
+        if (configDir == null) init();
+        return configDir;
+    }
+
     /** Folder where server-list icons live: {@code config/mktessentials/icon/}. */
     public static Path getIconDir() {
-        if (iconDir == null) iconDir = Path.of("config", "mktessentials", "icon");
+        if (iconDir == null) {
+            Path base = getConfigDir();
+            iconDir = base.resolve("icon");
+        }
         return iconDir;
     }
 
@@ -182,7 +204,7 @@ public final class ConfigManager {
 
     /** Dodaje brakujące klucze z defaults do user (rekurencyjnie po mapach). Zwraca true gdy coś dodano. */
     @SuppressWarnings("unchecked")
-    private static boolean deepMergeMissing(Map<String, Object> user, Map<String, Object> defaults) {
+    static boolean deepMergeMissing(Map<String, Object> user, Map<String, Object> defaults) {
         boolean changed = false;
         for (Map.Entry<String, Object> e : defaults.entrySet()) {
             String key = e.getKey();
