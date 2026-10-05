@@ -244,9 +244,13 @@ public class PlayerListener {
         boolean includeLuckPerms = forceIncludeLuckPerms && READY_PLAYERS.contains(player.getUUID());
         
         PlayerData data = DataManager.getPlayerData(player.getUUID());
-        String name = data.getNickname() != null && !data.getNickname().isBlank()
-                ? LegacyCodeConverter.fromMiniMessage(data.getNickname())
-                : player.getScoreboardName();
+        String name;
+        if (data.getNickname() != null && !data.getNickname().isBlank()) {
+            name = LegacyCodeConverter.fromMiniMessage(data.getNickname());
+        } else {
+            String lpUser = includeLuckPerms ? LuckPermsHook.getUsername(player) : "";
+            name = (lpUser != null && !lpUser.isBlank()) ? lpUser : player.getScoreboardName();
+        }
         String dot = "";
         if (data.isRecording()) dot = "&c\u25cf &r";
         else if (data.isStreaming()) dot = "&d\u25cf &r";

@@ -9,7 +9,7 @@ Toggles live in `integration.yml → mods`.
 
 | Mod | What it does | Notes |
 |-----|--------------|-------|
-| **LuckPerms** | Permissions, prefixes/suffixes, per-group chat | Recommended. Use the [patched build](https://github.com/onmydestiny/LuckPerms-PATCHED) on 1.21.1. |
+| **LuckPerms** | Permissions, prefixes/suffixes/usernames, per-group chat | Recommended. Full hex color code support (`&#RRGGBB`, `§#RRGGBB`, `&x...`, `<#RRGGBB>`). Use the [patched build](https://github.com/onmydestiny/LuckPerms-PATCHED) on 1.21.1. |
 | **Text Placeholder API** | Exposes `%mktessentials:*%` to other mods, and resolves theirs in chat | Use the [NeoForge port](https://github.com/MakotoPD/TextPlaceholderAPI-NeoForge). |
 | **TAB** | When present, MKT's native tab list / nametags / ping step aside so TAB manages them | Avoids double-rendering. |
 | **MiniMOTD** | When present, MKT's MOTD override steps aside | — |
@@ -28,7 +28,7 @@ With the Text Placeholder API installed, these resolve in `messages.yml` chat/jo
 in TAB's config:
 
 ```
-%mktessentials:name%        %mktessentials:nick%        %mktessentials:real_name%
+%mktessentials:name%        %mktessentials:username%    %mktessentials:nick%        %mktessentials:real_name%
 %mktessentials:prefix%      %mktessentials:suffix%      %mktessentials:full_name%
 %mktessentials:tab_full_name%
 ```

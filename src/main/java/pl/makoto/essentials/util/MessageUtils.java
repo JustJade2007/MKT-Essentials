@@ -15,8 +15,8 @@ public class MessageUtils {
     private static final int MAX_VISIBLE_LENGTH = 256;
 
     public static MutableComponent format(String text) {
-        if (text == null) return Component.literal("");
-        return Component.literal(text.replace('&', '\u00a7'));
+        if (text == null || text.isEmpty()) return Component.literal("");
+        return formatBypass(text);
     }
 
     public static MutableComponent format(ServerPlayer player, String text) {
@@ -105,7 +105,23 @@ public class MessageUtils {
         String converted = LegacyCodeConverter.convert(text);
         if (Settings.isMarkdownEnabled()) converted = ReplacementManager.markdown(converted);
         String filtered = PermissionFilter.filter(player, converted);
-        return LegacyCodeConverter.fromMiniMessage(filtered).replace('&', '§');
+        return toLegacySection(filtered);
+    }
+
+    public static String toLegacySection(String text) {
+        if (text == null || text.isEmpty()) return text == null ? "" : text;
+        String legacy = LegacyCodeConverter.fromMiniMessage(text);
+        // Convert &#RRGGBB to §x§r§r§g§g§b§b (vanilla Minecraft 1.16+ legacy hex format)
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile(
+                "(?i)&#([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])").matcher(legacy);
+        StringBuilder sb = new StringBuilder();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "§x§" + matcher.group(1).toLowerCase() + "§" + matcher.group(2).toLowerCase()
+                    + "§" + matcher.group(3).toLowerCase() + "§" + matcher.group(4).toLowerCase()
+                    + "§" + matcher.group(5).toLowerCase() + "§" + matcher.group(6).toLowerCase());
+        }
+        matcher.appendTail(sb);
+        return sb.toString().replace('&', '§');
     }
 
     /** Same as {@link #formatBypass(String)} but resolves MKT placeholders for the given player first. */
@@ -210,6 +226,7 @@ public class MessageUtils {
         if (text == null || text.isEmpty()) return "";
         return text
                 .replace("{player}", "%mktessentials:full_name/safe%")
+                .replace("{username}", "%mktessentials:username%")
                 .replace("{dot}", "%mktessentials:dot%")
                 .replace("{prefix}", "%mktessentials:prefix%")
                 .replace("{name}", "%mktessentials:name%")

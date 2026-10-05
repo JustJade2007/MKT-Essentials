@@ -43,6 +43,7 @@ public final class MKTPlaceholders {
         h.put("prefix", (player, arg) -> PlayerListener.getPrefixForTab(player));
         h.put("suffix", (player, arg) -> PlayerListener.getSuffixForTab(player));
         h.put("name", (player, arg) -> getName(player));
+        h.put("username", (player, arg) -> getName(player));
         h.put("real_name", (player, arg) -> player.getScoreboardName());
         h.put("nick", (player, arg) -> {
             String nickname = DataManager.getPlayerData(player.getUUID()).getNickname();
@@ -116,9 +117,14 @@ public final class MKTPlaceholders {
     private static String getName(ServerPlayer player) {
         PlayerData data = DataManager.getPlayerData(player.getUUID());
         String nickname = data.getNickname();
-        return nickname != null && !nickname.isBlank()
-                ? LegacyCodeConverter.fromMiniMessage(nickname)
-                : player.getScoreboardName();
+        if (nickname != null && !nickname.isBlank()) {
+            return LegacyCodeConverter.fromMiniMessage(nickname);
+        }
+        String lpUser = LuckPermsHook.getUsername(player);
+        if (lpUser != null && !lpUser.isBlank()) {
+            return lpUser;
+        }
+        return player.getScoreboardName();
     }
 
     private static String safe(String value) {
