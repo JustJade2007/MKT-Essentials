@@ -45,6 +45,18 @@ admin:
   vanish: false   # disabled
 ```
 
+### AFK (`settings.yml` & `commands.yml`)
+```yaml
+# settings.yml
+afk:
+  enabled: true       # Enable/disable AFK system and /afk command
+  timeout: 300        # Inactivity timeout in seconds (0 = disable auto-AFK)
+
+# commands.yml
+utility:
+  afk: true           # Enable/disable /afk command
+```
+
 ### Per-group chat format (`messages.yml`)
 ```yaml
 chat:

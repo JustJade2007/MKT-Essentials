@@ -43,3 +43,8 @@ repo/
 .kiro/
 
 stare/
+
+.jqwik-database
+logs/
+.gemini/
+.agents/

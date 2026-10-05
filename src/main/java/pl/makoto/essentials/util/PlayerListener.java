@@ -232,8 +232,7 @@ public class PlayerListener {
     }
 
     public static String getPrefixForTab(ServerPlayer player) {
-        String afk = AFKManager.isAFK(player.getUUID()) ? "&7[AFK] " : "";
-        return afk + LuckPermsHook.getPrefix(player);
+        return LuckPermsHook.getPrefix(player);
     }
 
     public static String getSuffixForTab(ServerPlayer player) {
@@ -420,6 +419,14 @@ public class PlayerListener {
     public static void onTabListFormat(PlayerEvent.TabListNameFormat event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         event.setDisplayName(MessageUtils.format(player, "%mktessentials:full_name%"));
+    }
+
+    public static void refreshTabName(ServerPlayer player) {
+        if (player.getServer() == null) return;
+        var list = player.getServer().getPlayerList();
+        list.broadcastAll(new ClientboundPlayerInfoUpdatePacket(
+                ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME,
+                player));
     }
 
     public static void refreshNickname(ServerPlayer player) {

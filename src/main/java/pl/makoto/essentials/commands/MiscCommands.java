@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import pl.makoto.essentials.config.I18n;
 import pl.makoto.essentials.config.Settings;
 import pl.makoto.essentials.data.DataManager;
 import pl.makoto.essentials.data.PlayerData;
@@ -51,7 +52,7 @@ public class MiscCommands {
                 .requires(source -> Permissions.hasPermission(source, "mktessentials.command.streaming", 0))
                 .executes(context -> streaming(context.getSource())));
 
-        if (Settings.isCommandEnabled("afk")) {
+        if (Settings.isAfkEnabled() && Settings.isCommandEnabled("afk")) {
             dispatcher.register(Commands.literal("afk")
                     .requires(source -> Permissions.hasPermission(source, "mktessentials.command.afk", 0))
                     .executes(context -> afk(context.getSource())));
@@ -119,6 +120,10 @@ public class MiscCommands {
     }
 
     private static int afk(CommandSourceStack source) {
+        if (!Settings.isAfkEnabled() || !Settings.isCommandEnabled("afk")) {
+            source.sendFailure(MessageUtils.prefixed(I18n.get("afk.disabled")));
+            return 0;
+        }
         ServerPlayer player = source.getPlayer();
         if (player == null) return 0;
 

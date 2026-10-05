@@ -2,9 +2,11 @@
 
 ## [1.1.1]
 
-## Config
+### Fixes & Improvements
 
-- **Afk in config** - Added `afk` commant to the config file, allowing server administrators to configure AFK is enabled or disabled on server. This provides flexibility for server owners to manage player activity and ensure a smooth gaming experience. 
+- **AFK Team Assignment Fix (#6)** — Going AFK no longer assigns players to a scoreboard team or disrupts existing vanilla team assignments. Above-head nametag management also respects and preserves players on existing vanilla/external teams.
+- **AFK Configuration & Disabling (#1)** — Added an explicit `afk.enabled` configuration option in `settings.yml` and unified command toggle with `commands.yml -> utility.afk`. Setting `afk.enabled: false` or `utility.afk: false` properly disables the `/afk` command and auto-AFK detection, clears any active AFK status on reload, and returns a helpful disabled message when the command is run.
+- **Missing Keys Merging for commands.yml** — Missing keys from default `commands.yml` are now merged automatically on startup without overwriting custom settings. 
 
 ## [1.1.0]
 

@@ -33,7 +33,7 @@ public class AFKManager {
                     player.getServer().getPlayerList().broadcastSystemMessage(
                         MessageUtils.prefixed(I18n.get("afk.no-longer-afk", "player", player.getScoreboardName())), false);
                 }
-                PlayerListener.refreshNickname(player);
+                PlayerListener.refreshTabName(player);
             }
         }
     }
@@ -44,9 +44,12 @@ public class AFKManager {
 
     /** Manual /afk toggle. @return true if the player is now AFK */
     public static boolean toggleAfk(ServerPlayer player) {
+        if (!Settings.isAfkEnabled() || !Settings.isCommandEnabled("afk")) {
+            return false;
+        }
         UUID uuid = player.getUUID();
         if (afkPlayers.contains(uuid)) {
-            recordActivity(uuid); // announces "no longer AFK" and refreshes the nickname
+            recordActivity(uuid); // announces "no longer AFK" and refreshes tab name
             return false;
         }
         afkPlayers.add(uuid);
@@ -57,7 +60,7 @@ public class AFKManager {
             player.getServer().getPlayerList().broadcastSystemMessage(
                 MessageUtils.prefixed(I18n.get("afk.now-afk", "player", player.getScoreboardName())), false);
         }
-        PlayerListener.refreshNickname(player);
+        PlayerListener.refreshTabName(player);
         return true;
     }
 
@@ -67,8 +70,24 @@ public class AFKManager {
         lastPositions.remove(uuid);
     }
 
+    public static void clearAll() {
+        var server = ServerLifecycleHooks.getCurrentServer();
+        for (UUID uuid : new ArrayList<>(afkPlayers)) {
+            if (server != null) {
+                ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+                if (player != null) {
+                    PlayerListener.refreshTabName(player);
+                }
+            }
+        }
+        afkPlayers.clear();
+        lastPositions.clear();
+        lastActivity.clear();
+    }
+
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!Settings.isAfkEnabled()) return;
         int timeout = Settings.getAfkTimeout();
         if (timeout <= 0) return;
 
@@ -92,7 +111,7 @@ public class AFKManager {
                         player.getServer().getPlayerList().broadcastSystemMessage(
                             MessageUtils.prefixed(I18n.get("afk.now-afk", "player", player.getScoreboardName())), false);
                     }
-                    PlayerListener.refreshNickname(player);
+                    PlayerListener.refreshTabName(player);
                 }
             }
         }
@@ -100,7 +119,7 @@ public class AFKManager {
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (Settings.getAfkTimeout() <= 0) return;
+        if (!Settings.isAfkEnabled() || Settings.getAfkTimeout() <= 0) return;
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         UUID uuid = player.getUUID();
@@ -124,7 +143,7 @@ public class AFKManager {
 
     @SubscribeEvent
     public static void onChat(ServerChatEvent event) {
-        if (Settings.getAfkTimeout() <= 0) return;
+        if (!Settings.isAfkEnabled() || Settings.getAfkTimeout() <= 0) return;
         recordActivity(event.getPlayer().getUUID());
     }
 }
